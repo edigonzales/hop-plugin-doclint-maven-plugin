@@ -12,9 +12,15 @@ the repository. It is the automated part of the hop plugin documentation contrac
 | `e2e/` | Automated integration tests for CI | Not part of the documentation contract |
 
 Every `@Transform` must link its canonical page through `documentationUrl`. The page is derived by
-convention: `.../transforms/example-transform.html` maps to
-`docs/transforms/example-transform.adoc`. There is no mapping file; the annotation `id` and the
-`:plugin-id:` attribute must match.
+convention; there is no mapping file:
+
+* a page URL uses the file name: `.../transforms/example-transform.html` maps to
+  `docs/transforms/example-transform.adoc`
+* a single-page handbook URL uses the fragment: `.../geometry-calculator/main/index.html#geometry-calculator`
+  maps to `docs/transforms/geometry-calculator.adoc` and requires the explicit anchor
+  `[[geometry-calculator]]` in that file
+
+The annotation `id` and the `:plugin-id:` attribute must match in both cases.
 
 ## Checks in v0.1
 
@@ -31,6 +37,7 @@ initialized.
 | Annotation | `supportedEngines` and `excludedEngines` are not both set | error |
 | Annotation | Deprecated `id1,id2` aliases | warning |
 | Documentation | Page exists, `:plugin-id:` matches, `:plugin-type: transform`, `:description:` present | error |
+| Documentation | The URL fragment of a single-page handbook URL exists as explicit anchor in the page | error |
 | Documentation | Required sections present and not empty: Description, Input, Options, Output, Supported engines, Examples, Error handling, Limitations | error |
 | Examples | At least one `.hpl` under `examples/` references the plugin id (configurable) | error |
 | Examples | Every `.hpl` under `examples/` is readable XML | error |

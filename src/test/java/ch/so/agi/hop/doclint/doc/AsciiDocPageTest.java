@@ -101,4 +101,27 @@ class AsciiDocPageTest {
 
     assertTrue(page.attribute("note").isEmpty());
   }
+
+  @Test
+  void readsExplicitAnchors() {
+    AsciiDocPage page =
+        AsciiDocPage.parse(
+            """
+            [[geometry-calculator]]
+            = Geometry Calculator
+
+            == Description
+
+            Text.
+
+            [#options,role]
+            == Options
+
+            Text.
+            """);
+
+    assertTrue(page.hasAnchor("geometry-calculator"));
+    assertTrue(page.hasAnchor("options"));
+    assertFalse(page.hasAnchor("missing"));
+  }
 }

@@ -15,11 +15,23 @@ import java.util.Locale;
 /**
  * Validates the AsciiDoc page of every discovered plugin element.
  *
- * <p>The page is derived from {@code documentationUrl} by convention: the URL file name
- * ({@code .../transforms/example.html}) maps to {@code docs/transforms/example.adoc}. No mapping
- * file exists. The annotation id and the {@code :plugin-id:} attribute must match.
+ * <p>The page is derived from {@code documentationUrl} by convention. Two URL forms are supported:
+ *
+ * <ul>
+ *   <li>a page URL: the file name maps to the AsciiDoc file
+ *       ({@code .../transforms/example.html} to {@code docs/transforms/example.adoc}),
+ *   <li>a single-page handbook URL with fragment: the fragment maps to the AsciiDoc file and must
+ *       be declared as an explicit anchor ({@code .../index.html#example} to
+ *       {@code docs/transforms/example.adoc} with {@code [[example]]}).
+ * </ul>
+ *
+ * <p>No mapping file exists. The annotation id, the {@code :plugin-id:} attribute and the file name
+ * must match.
  */
 public final class DocumentationValidator {
+
+  /** Page file name and optional anchor derived from a documentation URL. */
+  record DocumentationTarget(String pageName, String anchor) {}
 
   public List<CheckResult> validate(List<PluginElement> elements, DocLintConfig config)
       throws IOException {
@@ -36,8 +48,8 @@ public final class DocumentationValidator {
       }
       results.add(CheckResult.ok(element.id(), "documentationUrl", url));
 
-      String pageName = pageName(url);
-      if (pageName == null) {
+      DocumentationTarget target = target(url);
+      if (target == null) {
         results.add(
             CheckResult.fail(element.id(), "documentationUrl does not point to a page", url));
         continue;
@@ -46,26 +58,37 @@ public final class DocumentationValidator {
           config
               .docsDirectory()
               .resolve(element.type().docsSubdirectory())
-              .resolve(pageName + ".adoc");
+              .resolve(target.pageName() + ".adoc");
       if (!Files.isRegularFile(page)) {
         results.add(
             CheckResult.fail(element.id(), "documentation page is missing", config.display(page)));
         continue;
       }
       results.add(CheckResult.ok(element.id(), "documentation page", config.display(page)));
-      results.addAll(checkPage(element, config, page));
+      results.addAll(checkPage(element, config, page, target.anchor()));
     }
     return results;
   }
 
   private List<CheckResult> checkPage(
-      PluginElement element, DocLintConfig config, Path page) throws IOException {
+      PluginElement element, DocLintConfig config, Path page, String anchor) throws IOException {
     List<CheckResult> results = new ArrayList<>();
     String id = element.id();
     AsciiDocPage doc = AsciiDocPage.read(page);
     results.add(checkAttribute(id, doc, "plugin-id", id));
     results.add(checkAttribute(id, doc, "plugin-type", element.typeId()));
     results.add(checkAttributePresent(id, doc, "description"));
+    if (anchor != null) {
+      if (doc.hasAnchor(anchor)) {
+        results.add(CheckResult.ok(id, "anchor: #" + anchor));
+      } else {
+        results.add(
+            CheckResult.fail(
+                id,
+                "anchor #" + anchor + " is missing in " + config.display(page),
+                "add [[" + anchor + "]] above the page or section title"));
+      }
+    }
     for (String section : element.type().requiredSections()) {
       if (!doc.hasSection(section)) {
         results.add(
@@ -105,16 +128,25 @@ public final class DocumentationValidator {
     return CheckResult.ok(id, ":" + attribute + ":", actual);
   }
 
-  /** Extracts the local page name from a documentation URL, or {@code null} if it has none. */
-  static String pageName(String url) {
-    String path;
+  /** Resolves a documentation URL to the page file name and optional anchor, or {@code null}. */
+  static DocumentationTarget target(String url) {
+    URI uri;
     try {
-      path = URI.create(url).getPath();
+      uri = URI.create(url);
     } catch (IllegalArgumentException e) {
       return null;
     }
+    String fragment = uri.getFragment();
+    if (fragment != null && !fragment.isBlank()) {
+      return new DocumentationTarget(fragment, fragment);
+    }
+    String path = uri.getPath();
     if (path == null || path.isBlank()) {
       return null;
+    }
+    // Documentation URLs may use directory style and end with a slash.
+    while (path.endsWith("/")) {
+      path = path.substring(0, path.length() - 1);
     }
     String name = path.substring(path.lastIndexOf('/') + 1);
     if (name.isBlank()) {
@@ -126,6 +158,12 @@ public final class DocumentationValidator {
     } else if (lower.endsWith(".htm")) {
       name = name.substring(0, name.length() - ".htm".length());
     }
-    return name.isBlank() ? null : name;
+    return name.isBlank() ? null : new DocumentationTarget(name, null);
+  }
+
+  /** The AsciiDoc page file name derived from a documentation URL, or {@code null}. */
+  static String pageName(String url) {
+    DocumentationTarget target = target(url);
+    return target == null ? null : target.pageName();
   }
 }

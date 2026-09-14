@@ -5,9 +5,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -21,9 +23,12 @@ public final class AsciiDocPage {
 
   private static final Pattern ATTRIBUTE = Pattern.compile("^\\s*:([^:\\s]+):\\s*(.*?)\\s*$");
   private static final Pattern SECTION = Pattern.compile("^==\\s+(.+?)\\s*$");
+  private static final Pattern ANCHOR = Pattern.compile("^\\[\\[([^\\]]+?)(?:,[^\\]]*)?\\]\\]\\s*$");
+  private static final Pattern BLOCK_ID = Pattern.compile("^\\[#([^,\\]\\s]+)[^\\]]*\\]\\s*$");
 
   private final Map<String, String> attributes = new LinkedHashMap<>();
   private final Map<String, String> sections = new LinkedHashMap<>();
+  private final Set<String> anchors = new LinkedHashSet<>();
 
   private AsciiDocPage() {}
 
@@ -36,6 +41,16 @@ public final class AsciiDocPage {
     String currentSection = null;
     StringBuilder currentContent = null;
     for (String line : text.split("\\R", -1)) {
+      Matcher anchor = ANCHOR.matcher(line);
+      if (anchor.matches()) {
+        page.anchors.add(anchor.group(1).trim());
+        continue;
+      }
+      Matcher blockId = BLOCK_ID.matcher(line);
+      if (blockId.matches()) {
+        page.anchors.add(blockId.group(1).trim());
+        continue;
+      }
       Matcher attribute = ATTRIBUTE.matcher(line);
       if (attribute.matches() && currentSection == null) {
         page.attributes.put(attribute.group(1).toLowerCase(Locale.ROOT), attribute.group(2).trim());
@@ -66,6 +81,11 @@ public final class AsciiDocPage {
 
   public boolean hasSection(String name) {
     return sections.containsKey(name.toLowerCase(Locale.ROOT));
+  }
+
+  /** True when the page declares the given explicit anchor ({@code [[id]]} or {@code [#id]}). */
+  public boolean hasAnchor(String name) {
+    return anchors.contains(name);
   }
 
   /** True when the section exists and contains at least one readable line. */

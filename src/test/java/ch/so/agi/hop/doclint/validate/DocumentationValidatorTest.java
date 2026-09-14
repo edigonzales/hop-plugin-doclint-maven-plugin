@@ -52,6 +52,7 @@ class DocumentationValidatorTest {
     Files.writeString(
         docs.resolve("example-transform.adoc"),
         """
+        [[example-transform]]
         = Example Transform
         :plugin-id: %s
         :plugin-type: transform
@@ -178,6 +179,58 @@ class DocumentationValidatorTest {
   }
 
   @Test
+  void validatesASinglePageHandbookUrlWithAnchor() throws IOException {
+    writePage("EXAMPLE_TRANSFORM", "\n== Options\n\nSome option.\n");
+
+    List<CheckResult> results =
+        validate(element("https://example.org/handbook/main/index.html#example-transform"), true);
+
+    assertFalse(results.stream().anyMatch(CheckResult::isError));
+    assertTrue(contains(results, CheckStatus.OK, "anchor: #example-transform"));
+  }
+
+  @Test
+  void failsWhenTheHandbookAnchorIsMissing() throws IOException {
+    Files.writeString(
+        docs.resolve("example-transform.adoc"),
+        """
+        = Example Transform
+        :plugin-id: EXAMPLE_TRANSFORM
+        :plugin-type: transform
+        :description: Example description
+
+        == Description
+        Reads rows.
+
+        == Input
+        One row.
+
+        == Options
+        Some option.
+
+        == Output
+        One row.
+
+        == Supported engines
+        Local.
+
+        == Examples
+        See examples/.
+
+        == Error handling
+        Fails.
+
+        == Limitations
+        None.
+        """);
+
+    List<CheckResult> results =
+        validate(element("https://example.org/handbook/main/index.html#example-transform"), true);
+
+    assertTrue(contains(results, CheckStatus.FAIL, "anchor #example-transform is missing"));
+  }
+
+  @Test
   void skipsEveryCheckWhenDocumentationIsNotRequired() throws IOException {
     List<CheckResult> results = validate(element(""), false);
 
@@ -190,6 +243,12 @@ class DocumentationValidatorTest {
     assertEquals("example-transform", DocumentationValidator.pageName(DOCUMENTATION_URL));
     assertEquals("plain", DocumentationValidator.pageName("https://example.org/plain.htm"));
     assertEquals("page", DocumentationValidator.pageName("https://example.org/sub/page"));
+    assertEquals(
+        "example-transform",
+        DocumentationValidator.pageName("https://example.org/handbook/main/index.html#example-transform"));
+    assertEquals(
+        "example-transform",
+        DocumentationValidator.pageName("https://example.org/transforms/example-transform/"));
     assertNull(DocumentationValidator.pageName("https://example.org/"));
     assertNull(DocumentationValidator.pageName("not a url"));
   }
