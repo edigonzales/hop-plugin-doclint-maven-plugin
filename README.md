@@ -22,6 +22,23 @@ convention; there is no mapping file:
 
 The annotation `id` and the `:plugin-id:` attribute must match in both cases.
 
+GUI elements are documented as ASCII mockups instead of screenshots. Put them in a listing block
+with the `gui-mockup` role:
+
+```adoc
+[.gui-mockup]
+----
++----------------------------------+
+| Dialog title                     |
++----------------------------------+
+| Field   [ value                ] |
++----------------------------------+
+----
+```
+
+The handbook build renders `.gui-mockup` blocks with a smaller font. Screenshots remain an optional
+addition when they help orientation.
+
 ## Checks in v0.1
 
 The linter scans `target/classes` with [ClassGraph](https://github.com/classgraph/classgraph). The
