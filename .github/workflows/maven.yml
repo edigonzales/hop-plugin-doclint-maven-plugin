@@ -1,0 +1,54 @@
+name: Build and publish snapshot
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hop-plugin-doclint-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    uses: edigonzales/hop-plugin-ci/.github/workflows/maven-library-verify.yml@main
+    with:
+      java-versions: '["21", "25"]'
+      runner-os: '["ubuntu-24.04", "windows-2025", "macos-15"]'
+      canonical-runner-os: ubuntu-24.04
+      canonical-java-version: '21'
+      maven-working-directory: .
+      pom-file: pom.xml
+      maven-options: -U -B -ntp
+      maven-goals: clean verify
+      compatibility-goals: clean test
+      artifact-descriptors: >-
+        [
+          {"groupId":"ch.so.agi","artifactId":"hop-plugin-doclint-maven-plugin","packaging":"maven-plugin","fileGlob":"target/hop-plugin-doclint-maven-plugin-*-SNAPSHOT.jar","pomFile":"pom.xml","classifiers":[{"classifier":"sources","type":"jar","fileGlob":"target/hop-plugin-doclint-maven-plugin-*-SNAPSHOT-sources.jar"},{"classifier":"javadoc","type":"jar","fileGlob":"target/hop-plugin-doclint-maven-plugin-*-SNAPSHOT-javadoc.jar"}]}
+        ]
+      artifact-name-prefix: hop-plugin-doclint-maven-plugin
+      hop-version: 2.19.0
+      ci-ref: main
+
+  publish:
+    needs: verify
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    uses: edigonzales/hop-plugin-ci/.github/workflows/maven-library-publish.yml@main
+    with:
+      repository-kind: snapshot
+      verified-artifact-name: ${{ needs.verify.outputs.canonical-artifact-name }}
+      artifact-descriptors: >-
+        [
+          {"groupId":"ch.so.agi","artifactId":"hop-plugin-doclint-maven-plugin","packaging":"maven-plugin","fileGlob":"target/hop-plugin-doclint-maven-plugin-*-SNAPSHOT.jar","pomFile":"pom.xml","classifiers":[{"classifier":"sources","type":"jar","fileGlob":"target/hop-plugin-doclint-maven-plugin-*-SNAPSHOT-sources.jar"},{"classifier":"javadoc","type":"jar","fileGlob":"target/hop-plugin-doclint-maven-plugin-*-SNAPSHOT-javadoc.jar"}]}
+        ]
+      pom-file: pom.xml
+      hop-version: 2.19.0
+      post-publish-commands: '["python3 scripts/verify-snapshot.py"]'
+      ci-ref: main
+    secrets:
+      MAVEN_USERNAME: ${{ secrets.INTERLIS_MAVEN_USERNAME }}
+      MAVEN_PASSWORD: ${{ secrets.INTERLIS_MAVEN_TOKEN }}

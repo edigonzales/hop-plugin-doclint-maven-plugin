@@ -1,0 +1,36 @@
+= Failing Transform
+:plugin-id: FAILING_TRANSFORM
+:plugin-type: transform
+:description: Fails the documentation checks.
+
+== Description
+
+Checks the failing report.
+
+== Input
+
+One incoming row per file.
+
+== Options
+
+// TODO: options are missing
+
+== Output
+
+One outgoing row per input row.
+
+== Supported engines
+
+Local.
+
+== Examples
+
+See examples/.
+
+== Error handling
+
+Fails.
+
+== Limitations
+
+None.

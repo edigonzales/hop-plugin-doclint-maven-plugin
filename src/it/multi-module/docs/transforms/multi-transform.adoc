@@ -1,0 +1,36 @@
+= Multi Transform
+:plugin-id: MULTI_TRANSFORM
+:plugin-type: transform
+:description: Checks multi-module documentation resolution.
+
+== Description
+
+Documentation lives at the top-level project.
+
+== Input
+
+One incoming row per file.
+
+== Options
+
+Some option.
+
+== Output
+
+One outgoing row per input row.
+
+== Supported engines
+
+Local.
+
+== Examples
+
+xref:../../examples/demo/multi-transform.hpl[Example pipeline]
+
+== Error handling
+
+Fails.
+
+== Limitations
+
+None.

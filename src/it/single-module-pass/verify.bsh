@@ -1,0 +1,15 @@
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+
+File buildLog = new File(basedir, "build.log");
+String log = new String(Files.readAllBytes(buildLog.toPath()), StandardCharsets.UTF_8);
+if (!log.contains("Hop Plugin Documentation Check")) {
+    throw new Exception("Expected the DocLint report.\n" + log);
+}
+if (!log.contains("section: Options")) {
+    throw new Exception("Expected the documentation sections to be checked.\n" + log);
+}
+if (!log.contains("Hop plugin documentation validation passed.")) {
+    throw new Exception("Expected DocLint to pass.\n" + log);
+}

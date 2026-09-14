@@ -1,0 +1,18 @@
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+
+File buildLog = new File(basedir, "build.log");
+String log = new String(Files.readAllBytes(buildLog.toPath()), StandardCharsets.UTF_8);
+if (!log.contains("keywords are missing")) {
+    throw new Exception("Expected the missing keywords to be reported.\n" + log);
+}
+if (!log.contains("section 'Options' is empty")) {
+    throw new Exception("Expected the empty Options section to be reported.\n" + log);
+}
+if (!log.contains("no example uses FAILING_TRANSFORM")) {
+    throw new Exception("Expected the missing example to be reported.\n" + log);
+}
+if (!log.contains("Hop plugin documentation validation failed")) {
+    throw new Exception("Expected DocLint to fail the build.\n" + log);
+}

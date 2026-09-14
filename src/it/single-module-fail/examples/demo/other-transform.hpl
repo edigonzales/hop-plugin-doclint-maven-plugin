@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipeline>
+  <info>
+    <name>other-transform</name>
+  </info>
+  <transform>
+    <type>OTHER_TRANSFORM</type>
+    <name>Other Transform</name>
+  </transform>
+</pipeline>

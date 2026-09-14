@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipeline>
+  <info>
+    <name>multi-transform</name>
+  </info>
+  <transform>
+    <type>MULTI_TRANSFORM</type>
+    <name>Multi Transform</name>
+  </transform>
+</pipeline>
